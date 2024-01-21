@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webcam Recorder</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container mt-5">
+  <h1 class="text-center mb-4">Webcam Recorder</h1>
+
+  <div class="text-center">
+    <button class="btn btn-primary" id="startBtn">Start Recording</button>
+    <button class="btn btn-danger" id="stopBtn" disabled>Stop Recording</button>
+  </div>
+
+  <div class="mt-4">
+    <video id="preview" width="100%" height="auto" autoplay playsinline></video>
+  </div>
+
+  <div class="mt-4 text-center">
+    <a id="downloadLink" style="display: none;" class="btn btn-success" download="recorded-video.webm">Download Recorded Video</a>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+<script>
+  let mediaRecorder;
+  let recordedBlobs;
+
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const preview = document.getElementById('preview');
+  const downloadLink = document.getElementById('downloadLink');
+
+  startBtn.addEventListener('click', startRecording);
+  stopBtn.addEventListener('click', stopRecording);
+
+  async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    preview.srcObject = stream;
+
+    recordedBlobs = [];
+    const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+    mediaRecorder = new MediaRecorder(stream, options);
+
+    mediaRecorder.ondataavailable = handleDataAvailable;
+    mediaRecorder.onstop = handleStop;
+
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    mediaRecorder.start();
+  }
+
+  function handleDataAvailable(event) {
+    if (event.data && event.data.size > 0) {
+      recordedBlobs.push(event.data);
+    }
+  }
+
+  function handleStop() {
+    const blob = new Blob(recordedBlobs, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.style.display = 'block';
+
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+
+  function stopRecording() {
+    mediaRecorder.stop();
+  }
+</script>
+
+</body>
+</html>
